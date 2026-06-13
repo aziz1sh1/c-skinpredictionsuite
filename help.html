@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<div style="position:fixed; top:10px; right:10px; z-index:999;"> <button onclick="closeHelp()" style=" background:#dc2626; color:white; border:none; padding:8px 12px; border-radius:8px; font-weight:bold; cursor:pointer; ">
+ ✖ Close </button> </div>
+
+
+<script>
+function closeHelp(){
+  try {
+    window.close();   // works if opened via window.open
+  } catch(e) {}
+
+  // fallback (always works)
+  window.location.href = "index.html";
+}
+
+</script>
+
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help & User Guide - 𝓒 𝓢kin</title>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  margin:0;
+  background:#f4f6f9;
+  color:#222;
+}
+
+.header{
+  background:#0e2540;
+  color:white;
+  padding:25px;
+  text-align:center;
+}
+
+.header h1{
+  margin:0;
+  font-size:26px;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.card{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+h2{
+  color:#0e2540;
+}
+
+h3{
+  margin-top:15px;
+}
+
+.step{
+  background:#eef5ff;
+  padding:12px;
+  border-radius:8px;
+  margin:10px 0;
+}
+
+.note{
+  background:#fff7ed;
+  padding:12px;
+  border-left:5px solid #f97316;
+  border-radius:8px;
+}
+
+.footer{
+  text-align:center;
+  padding:15px;
+  font-size:12px;
+  color:#666;
+}
+
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+<h2>                 💻 System Requirements</h2>
+
+<ul>
+  <li>📱 Android device (recommended Android 8.0 or above) if use APK file</li>
+  <li>🌐 Internet connection (required for PubChem data) if enter chemical data manually than no need</li>
+  <li>📷 Camera access (for chemical scanning)</li>
+  <li>💾 Minimum 2 GB RAM 🗃️ (recommended)</li>
+  <li>🌍 Modern browser support (Chrome recommended)</li>
+</ul>
+
+</div>
+<div class="header">
+  <h1> 𝓒 𝓢kin Prediction 𝓢uite</h1>
+  <p>Help & User Guide</p>
+</div>
+
+<div class="container">
+
+<div class="card">
+<h2>🔬 Overview</h2>
+<p>
+This application is a <b>computational chemistry tool</b> designed to extract chemical data,
+analyze properties, and predict skin absorption using scientific models.
+</p>
+</div>
+
+<div class="card">
+<h2>🚀 Main Features</h2>
+
+<h3>📷 Chemical Scanner (OCR + Camera)</h3>
+<p>Upload an image or use camera to scan chemical names. The system extracts text automatically.</p>
+
+<h3>🧪 Chemical Data Fetch (PubChem)</h3>
+<p>Retrieve Molecular Weight (MW) and logP using online database.</p>
+
+<h3>💧 Skin Absorption Calculator</h3>
+<p>Predict permeability (Kp) using Potts & Guy equation.</p>
+
+</div>
+
+<div class="card">
+<h2>📊 How to Use</h2>
+
+<div class="step">1. Upload image OR open camera</div>
+<div class="step">2. Extract chemical name</div>
+<div class="step">3. Fetch chemical data</div>
+<div class="step">4. Click Calculate</div>
+<div class="step">5. View results</div>
+
+</div>
+
+<div class="card">
+<h2>🧠 Scientific Background</h2>
+<p>
+The system uses QSAR-based modeling. Skin permeability depends on:
+</p>
+<ul>
+<li>logP (lipophilicity)</li>
+<li>Molecular Weight (MW)</li>
+</ul>
+
+<p>
+Higher logP → better membrane penetration<br>
+Higher MW → lower penetration
+</p>
+
+</div>
+
+<div class="card">
+<h2>⚠️ Important Notes</h2>
+
+<div class="note">
+Ensure correct chemical name. OCR may require manual correction.
+</div>
+
+<div class="note">
+Internet connection required for PubChem data.
+</div>
+
+</div>
+
+<div class="card">
+<h2>⚠️ Disclaimer</h2>
+<p>
+This tool is for research and educational purposes only.
+Results must be experimentally validated before use.
+</p>
+</div>
+
+</div>
+
+<div class="footer">
+𝓒 𝓢kin Prediction Suite — Muhammad Aziz et al. (screening-level tools)
+</div>
+
+</body>
+</html>

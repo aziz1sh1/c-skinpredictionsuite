@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <title>𝓢kin Prediction 𝓢uite</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#f7f9fc; --card:#fff; --accent:#0b63ff; --muted:#6b7280;
+    }
+    body{font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);color:#0b1220;margin:18px;}
+    h1{text-align:center;color:#0e2540;margin-bottom:12px;}
+    .tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
+    .tab-btn{padding:10px 16px;border-radius:10px 10px 0 0;border:0;background:#e6eefc;color:#0b2a66;font-weight:700;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,0.04);}
+    .tab-btn.active{background:linear-gradient(180deg,var(--accent),#0051d4);color:#fff;transform:translateY(-3px);box-shadow:0 8px 26px rgba(11,99,255,0.14);}
+    .card{max-width:1000px;margin:0 auto;background:var(--card);border-radius:0 12px 12px 12px;padding:18px;border:1px solid rgba(2,6,23,0.06);box-shadow:0 10px 30px rgba(8,18,40,0.04);}
+    .tab-content{display:none;} .tab-content.active{display:block;animation:fadeIn .25s ease;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .header{background:#f1f8ff;padding:10px;border-radius:8px;border:1px solid #e6f0ff;text-align:center;margin-bottom:12px;}
+    label{display:block;margin-top:8px;font-weight:600;color:#14314b}
+    input[type="number"], input[type="file"], input[type="text"], select{
+      padding:8px;margin-top:6px;border-radius:6px;border:1px solid #d7e1ee;width:220px;
+    }
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px}
+    .controls{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+    button{padding:10px 14px;border-radius:8px;border:0;cursor:pointer;font-weight:600}
+    .calc-btn{background:var(--accent);color:#fff}
+    .clear-btn{background:#ff514d;color:#fff}
+    .print-btn{background:#12a45a;color:#fff;display:none}
+    .pdf-btn{background:#7b1fa2;color:#fff;display:none}
+    .result-box{margin-top:14px;padding:12px;border-radius:8px;border:1px solid #e6eef8;background:#fcfeff}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{border:1px solid #e6eef8;padding:8px;text-align:center;font-size:14px}
+    th{background:#f4fbff}
+    .muted{color:var(--muted);font-size:13px}
+    .disclaimer{margin-top:12px;font-size:13px;color:#8b1d1d;border:1px dashed #f5c6c6;padding:10px;border-radius:6px;background:#fff6f6}
+    .footer{text-align:center;margin-top:12px;color:var(--muted);font-size:13px}
+    canvas{max-width:100%}
+   @media (max-width: 760px) {
+  .row { flex-direction: column; } /* stack inputs vertically */
+  input, select, button { width: 100%; max-width: 100%; }
+  table { font-size: 12px; } /* shrink table text */
+  .controls { flex-direction: column; } /* stack buttons vertically */
+  .card { padding: 12px; }
+
+
+    }
+  </style>
+
+  <!-- Chart.js + annotation plugin + html2pdf -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+</head>
+
+
+<body>
+
+<div style="position:fixed; top:10px; right:10px; z-index:999;">
+  <button onclick="window.open('help.html','_blank')">❓ Help</button>
+</div>
+  <h1>𝓒 𝓢kin Prediction 𝓢uite</h1>
+
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab(event,'absTab')">𝓢kin Absorption</button>
+  <button class="tab-btn" onclick="switchTab(event,'kinTab')">𝔇ynamic Kinetics</button>
+  <button class="tab-btn" onclick="switchTab(event,'toxTab')">𝓢kin Toxicity</button>
+  <button class="tab-btn special-tab" onclick="switchTab(event,'chemTab')">
+  🔬 Get 𝓒hemical Value </button>
+</div>
+
+  <div class="card">
+    <!-- TOXICITY TAB -->
+    <section id="toxTab" class="tab-content">
+      <div class="header">
+        <h2> 𝓢kin Toxicity Calculator (Electrophilicity)</h2>
+        <div id="refDateTox" class="muted"></div>
+      </div>
+
+      <label for="electro">Electrophilicity Index (ω)</label>
+      <input type="number" id="electro" step="any" placeholder="e.g., 2.45">
+
+      <div class="controls">
+        <button class="calc-btn" onclick="calculateSingle()">Calculate</button>
+        <button class="clear-btn" onclick="clearToxicity()">Clear</button>
+      </div>
+
+      <hr>
+
+      <h4 class="muted">Mixture Mode (up to 3)</h4>
+      <table>
+        <tr><th>#</th><th>Electrophilicity (ω)</th><th>Weight %</th></tr>
+        <tr><td>1</td><td><input type="number" id="m_e1" step="any"></td><td><input type="number" id="m_w1" step="any"></td></tr>
+        <tr><td>2</td><td><input type="number" id="m_e2" step="any"></td><td><input type="number" id="m_w2" step="any"></td></tr>
+        <tr><td>3</td><td><input type="number" id="m_e3" step="any"></td><td><input type="number" id="m_w3" step="any"></td></tr>
+      </table>
+
+      <div class="controls">
+        <button class="calc-btn" onclick="calculateManualMixture()">Calc Mixture</button>
+        <input type="file" id="toxCsv" accept=".csv">
+        <button class="calc-btn" onclick="calculateFileMixture()">From CSV</button>
+      </div>
+
+      <div id="results-tox" class="result-box"><em class="muted">Results will appear here...</em></div>
+
+      <div style="margin-top:10px">
+        <button id="printBtnTox" class="print-btn" onclick="window.print()">Print</button>
+        <button id="pdfBtnTox" class="pdf-btn" onclick="savePDF('toxTab')">Save PDF</button>
+      </div>
+    </section>
+
+    <!-- ABSORPTION TAB -->
+    <section id="absTab" class="tab-content active">
+      <div class="header">
+        <h2>𝓢kin Absorption (Potts & Guy)</h2>
+        <div id="refDateAbs" class="muted"></div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="logpAbs">logP</label>
+          <input type="number" id="logpAbs" step="any" placeholder="e.g., 1.6">
+        </div>
+        <div>
+          <label for="mwAbs">Molecular Weight (Da)</label>
+          <input type="number" id="mwAbs" step="any" placeholder="e.g., 326">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="doseAbs">Applied Dose (mg/cm²)</label>
+          <input type="number" id="doseAbs" step="any" value="1">
+        </div>
+        <div>
+          <label for="thicknessAbs">SC thickness L (µm)</label>
+          <input type="number" id="thicknessAbs" step="any" value="20">
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="calc-btn" onclick="calculateAbsorption()">Calculate</button>
+        <button class="clear-btn" onclick="clearAbsorption()">Clear</button>
+      </div>
+
+      <div id="results-abs" class="result-box"><em class="muted">Results will appear here...</em></div>
+
+      <div style="margin-top:10px">
+        <button id="printBtnAbs" class="print-btn" onclick="window.print()">Print</button>
+        <button id="pdfBtnAbs" class="pdf-btn" onclick="savePDF('absTab')">Save PDF</button>
+      </div>
+    </section>
+
+    <!-- KINETICS TAB -->
+    <section id="kinTab" class="tab-content">
+      <div class="header">
+        <h2>Absorption Kinetics — Tmax Simulation</h2>
+        <div id="refDateKin" class="muted"></div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="logpKin">logP (for Kp)</label>
+          <input type="number" id="logpKin" step="any" placeholder="e.g., 1.6">
+        </div>
+        <div>
+          <label for="mwKin">Molecular Weight (Da)</label>
+          <input type="number" id="mwKin" step="any" placeholder="e.g., 326">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="doseKin">Applied Dose (mg/cm²)</label>
+          <input type="number" id="doseKin" step="any" value="1">
+        </div>
+        <div>
+          <label for="thicknessKin">Stratum Corneum thickness L (µm)</label>
+          <input type="number" id="thicknessKin" step="any" value="20">
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="calc-btn" onclick="calculateKinetics()">Simulate</button>
+        <button class="clear-btn" onclick="clearKinetics()">Clear</button>
+      </div>
+
+      <div id="results-kin" class="result-box"><em class="muted">Results will appear here (Tlag, Kp, flux, T50, Tmax)...</em></div>
+
+      <div class="result-box">
+        <h3>Absorption vs Time (mg/cm²)</h3>
+        <canvas id="absGraph" height="180"></canvas>
+      </div>
+
+      <div style="margin-top:10px">
+        <button id="printBtnKin" class="print-btn" onclick="window.print()">Print</button>
+        <button id="pdfBtnKin" class="pdf-btn" onclick="savePDF('kinTab')">Save PDF</button>
+      </div>
+
+      <div class="disclaimer">
+        <strong>Notes & assumptions:</strong>
+        <ul>
+          <li>Potts & Guy: logKp = −2.72 + 0.71·logP − 0.0061·MW (gives Kp in cm/s).</li>
+          <li>D estimated as <code>D ≈ 1×10⁻7 / √MW</code> (cm²/s) — screening approximation.</li>
+          <li>Surface concentration approximated as <code>Csurface = Dose / L</code> (mg/cm³), with L in cm.</li>
+          <li>Tlag ≈ L² / (6D); T50 ≈ (0.5·Dose) / J; Tmax ≈ Tlag + T50 (screening approximation).</li>
+          <li>Results are for ranking and screening — experimental IVPT/in vivo needed for regulatory use.</li>
+        </ul>
+      </div>
+    </section>
+
+<!-- CHEMICAL VALUE TAB -->
+<section id="chemTab" class="tab-content">
+  <div class="header">
+    <h2>Get Chemical Value</h2>
+  </div>
+
+  <iframe 
+    src="tool.html" 
+    width="100%" 
+    height="600px" 
+    style="border:none; border-radius:10px;">
+  </iframe>
+</section>
+
+
+    <div class="footer"> 𝓒 𝓢kin Prediction Suite — Muhammad Aziz et al. <span class="muted"> (screening-level tools)</span></div>
+  </div>
+
+<script>
+/* ---------- Tab switch ---------- */
+function switchTab(evt, id){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(s=>s.classList.remove('active'));
+  evt.currentTarget.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+/* ---------- Ref & Date generation ---------- */
+function generateHeader(){
+  const today = new Date().toISOString().split('T')[0];
+  const r1 = Math.floor(Math.random()*900+100), r2 = Math.floor(Math.random()*900+100), r3 = Math.floor(Math.random()*900+100);
+  document.getElementById('refDateTox').innerHTML = `<strong>Ref:</strong> TOX-${r1} &nbsp;&nbsp; <strong>Date:</strong> ${today}`;
+  document.getElementById('refDateAbs').innerHTML = `<strong>Ref:</strong> ABS-${r2} &nbsp;&nbsp; <strong>Date:</strong> ${today}`;
+  document.getElementById('refDateKin').innerHTML = `<strong>Ref:</strong> KIN-${r3} &nbsp;&nbsp; <strong>Date:</strong> ${today}`;
+}
+
+/* ---------- PDF helper ---------- */
+function savePDF(sectionId){
+  const element=document.getElementById(sectionId);
+  const opt={margin:0.5,filename:sectionId+'_Report.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{unit:'in',format:'a4',orientation:'portrait'}};
+  html2pdf().from(element).set(opt).save();
+}
+
+/* ---------- TOXICITY functions ---------- */
+function calculateSingle(){
+  const electro=parseFloat(document.getElementById('electro').value);
+  let out="";
+  if(isNaN(electro)){
+    out="<p style='color:red;font-weight:700;'>Please enter numeric electrophilicity (ω).</p>";
+  } else {
+    let score=Math.min(electro*20,100);
+    let category="Low (Not classified)", cls="row-low";
+    if(electro>=3.5){category="High (Likely Sensitizer)"; cls="row-high";}
+    else if(electro>=2.0){category="Moderate (Possible Sensitizer)"; cls="row-med";}
+    out=`<h3>Single Chemical</h3>
+      <table><tr><th>Metric</th><th>Result</th></tr>
+      <tr><td>Electrophilicity (ω)</td><td>${electro.toFixed(3)}</td></tr>
+      <tr class="${cls}"><td>Score</td><td><strong>${score.toFixed(1)}/100</strong></td></tr>
+      <tr><td>Classification</td><td><strong>${category}</strong></td></tr></table>`;
+  }
+  out += `<div class="disclaimer"><strong>Note:</strong> Electrophilicity is a single descriptor for screening. Experimental assays required for confirmation.</div>`;
+  document.getElementById('results-tox').innerHTML = out;
+  document.getElementById('printBtnTox').style.display='inline-block';
+  document.getElementById('pdfBtnTox').style.display='inline-block';
+}
+
+function calculateManualMixture(){
+  const inputs=[
+    {name:'Chem1', electro:parseFloat(document.getElementById('m_e1').value), fraction:parseFloat(document.getElementById('m_w1').value)/100},
+    {name:'Chem2', electro:parseFloat(document.getElementById('m_e2').value), fraction:parseFloat(document.getElementById('m_w2').value)/100},
+    {name:'Chem3', electro:parseFloat(document.getElementById('m_e3').value), fraction:parseFloat(document.getElementById('m_w3').value)/100}
+  ];
+  processMixture(inputs);
+}
+
+function calculateFileMixture(){
+  const file=document.getElementById('toxCsv').files[0];
+  if(!file){ alert('Please choose a CSV file (Name,Electrophilicity,Weight%).'); return; }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const rows=e.target.result.split(/\r?\n/).filter(r=>r.trim()!=='');
+    const inputs=[];
+    for(const r of rows){
+      const p=r.split(',');
+      if(p.length>=3) inputs.push({name:p[0].trim(), electro:parseFloat(p[1]), fraction:parseFloat(p[2])/100});
+    }
+    processMixture(inputs);
+  };
+  reader.readAsText(file);
+}
+
+function processMixture(parsed){
+  let table=`<h3>Mixture</h3><table><tr><th>Chemical</th><th>ω</th><th>Score</th><th>Class</th><th>Weight%</th></tr>`;
+  let weightedSum=0, hazardIndex=0, maxScore=0, maxClass='Low';
+  for(const c of parsed){
+    if(isNaN(c.electro) || isNaN(c.fraction)) continue;
+    const score=Math.min(c.electro*20,100);
+    let category='Low', cls='row-low';
+    if(c.electro>=3.5){category='High'; cls='row-high';}
+    else if(c.electro>=2.0){category='Moderate'; cls='row-med';}
+    weightedSum += score * c.fraction;
+    hazardIndex += (score/100.0) * c.fraction;
+    if(score>maxScore){ maxScore = score; maxClass = category; }
+    table += `<tr class="${cls}"><td>${c.name}</td><td>${c.electro.toFixed(2)}</td><td>${score.toFixed(1)}</td><td>${category}</td><td>${(c.fraction*100).toFixed(1)}%</td></tr>`;
+  }
+  table += `</table>`;
+  const summary=`<h4>Summary</h4><ul><li><strong>Weighted Avg Score:</strong> ${weightedSum.toFixed(1)}/100</li>
+    <li><strong>Max Concern:</strong> ${maxClass} (${maxScore.toFixed(1)}/100)</li>
+    <li><strong>Hazard Index (HI):</strong> ${hazardIndex.toFixed(2)} (≥1 suggests concern)</li></ul>`;
+  document.getElementById('results-tox').innerHTML = table + summary + `<div class="disclaimer"><strong>Note:</strong> Screening only.</div>`;
+  document.getElementById('printBtnTox').style.display='inline-block';
+  document.getElementById('pdfBtnTox').style.display='inline-block';
+}
+
+function clearToxicity(){
+  document.getElementById('electro').value='';
+  ['m_e1','m_w1','m_e2','m_w2','m_e3','m_w3'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('results-tox').innerHTML='<em class="muted">Results will appear here...</em>';
+  document.getElementById('printBtnTox').style.display='none';
+  document.getElementById('pdfBtnTox').style.display='none';
+}
+
+/* ---------- ABSORPTION functions ---------- */
+function calculateAbsorption(){
+  const logP=parseFloat(document.getElementById('logpAbs').value);
+  const MW=parseFloat(document.getElementById('mwAbs').value);
+  const dose=parseFloat(document.getElementById('doseAbs').value);
+  const thickness=parseFloat(document.getElementById('thicknessAbs').value);
+  if(isNaN(logP)||isNaN(MW)){ document.getElementById('results-abs').innerHTML="<p style='color:red;font-weight:700;'>Enter valid logP & MW.</p>"; return; }
+  const L=thickness/10000; // µm -> cm
+  const logKp = -2.72 + (0.71 * logP) - (0.0061 * MW);
+  const Kp = Math.pow(10, logKp);
+  let category='Low', cls='row-low';
+  if(logKp > -2){ category='High'; cls='row-high'; }
+  else if(logKp > -3.5){ category='Moderate'; cls='row-med'; }
+  const out=`<h3>Absorption (Potts & Guy)</h3>
+    <table>
+      <tr><th>Metric</th><th>Result</th></tr>
+      <tr><td>logP</td><td>${logP.toFixed(2)}</td></tr>
+      <tr><td>MW (Da)</td><td>${MW.toFixed(1)}</td></tr>
+      <tr><td>logKp</td><td>${logKp.toFixed(4)}</td></tr>
+      <tr><td>Kp (cm/s)</td><td>${Kp.toExponential(3)}</td></tr>
+      <tr class="${cls}"><td>Classification</td><td><strong>${category}</strong></td></tr>
+    </table>
+    <div class="muted" style="margin-top:8px">Assumed SC thickness used for concentration: ${thickness} µm (L = ${L.toExponential(3)} cm). Dose = ${isNaN(dose)?'—':dose} mg/cm²</div>`;
+  document.getElementById('results-abs').innerHTML = out;
+  document.getElementById('printBtnAbs').style.display='inline-block';
+  document.getElementById('pdfBtnAbs').style.display='inline-block';
+}
+
+function clearAbsorption(){
+  document.getElementById('logpAbs').value=''; document.getElementById('mwAbs').value='';
+  document.getElementById('doseAbs').value='1'; document.getElementById('thicknessAbs').value='20';
+  document.getElementById('results-abs').innerHTML='<em class="muted">Results will appear here...</em>';
+  document.getElementById('printBtnAbs').style.display='none';
+  document.getElementById('pdfBtnAbs').style.display='none';
+}
+
+/* ---------- KINETICS (Tmax + Plot) ---------- */
+let absChart = null;
+
+function estimateD(MW){
+  if(isNaN(MW) || MW<=0) return NaN;
+  return 1e-7 / Math.sqrt(MW); // cm^2/s (screening)
+}
+
+function calculateKinetics(){
+  const logP = parseFloat(document.getElementById('logpKin').value);
+  const MW = parseFloat(document.getElementById('mwKin').value);
+  const dose = parseFloat(document.getElementById('doseKin').value);
+  const thickness = parseFloat(document.getElementById('thicknessKin').value);
+  if(isNaN(logP)||isNaN(MW)||isNaN(dose)||isNaN(thickness)){
+    document.getElementById('results-kin').innerHTML="<p style='color:red;font-weight:700;'>Enter valid logP, MW, Dose & thickness.</p>"; return;
+  }
+
+  const L = thickness / 10000; // µm -> cm
+  const logKp = -2.72 + (0.71 * logP) - (0.0061 * MW);
+  const Kp = Math.pow(10, logKp);
+  const D = estimateD(MW);
+  const Tlag_s = (D>0) ? (L*L)/(6*D) : NaN;
+  const Tlag_h = isFinite(Tlag_s) ? Tlag_s/3600 : NaN;
+  const Csurface = dose / L; // mg/cm^3
+  const J = Kp * Csurface; // mg/cm2/s
+  const T50_s = (J>0) ? (0.5 * dose) / J : NaN;
+  const T50_h = isFinite(T50_s) ? T50_s/3600 : NaN;
+  const Tmax_h = (isFinite(Tlag_h) && isFinite(T50_h)) ? (Tlag_h + T50_h) : NaN;
+
+  // Build results table
+  const fmt = n => isFinite(n) ? n : '—';
+  const out = `<h3>Kinetics Estimate</h3>
+    <table>
+      <tr><th>Metric</th><th>Value</th></tr>
+      <tr><td>logP</td><td>${logP.toFixed(2)}</td></tr>
+      <tr><td>MW (Da)</td><td>${MW.toFixed(1)}</td></tr>
+      <tr><td>Potts & Guy logKp</td><td>${logKp.toFixed(4)}</td></tr>
+      <tr><td>Kp (cm/s)</td><td>${isFinite(Kp)?Kp.toExponential(3):'—'}</td></tr>
+      <tr><td>Estimated D (cm²/s)</td><td>${isFinite(D)?D.toExponential(3):'—'}</td></tr>
+      <tr><td>SC thickness L (cm)</td><td>${L.toExponential(3)} (≈ ${thickness} µm)</td></tr>
+      <tr><td>Lag time Tlag (s)</td><td>${isFinite(Tlag_s)?Tlag_s.toFixed(2):'—'}</td></tr>
+      <tr><td>Lag time Tlag (h)</td><td>${isFinite(Tlag_h)?Tlag_h.toFixed(3):'—'}</td></tr>
+      <tr><td>Applied dose (mg/cm²)</td><td>${dose.toFixed(4)}</td></tr>
+      <tr><td>Surface conc. Csurface (mg/cm³)</td><td>${Csurface.toFixed(4)}</td></tr>
+      <tr><td>Flux J (mg/cm²/s)</td><td>${isFinite(J)?J.toExponential(3):'—'}</td></tr>
+      <tr><td>Time to absorb 50% (T50) (h)</td><td>${isFinite(T50_h)?T50_h.toFixed(3):'—'}</td></tr>
+      <tr><td>Approx. Tmax (h)</td><td>${isFinite(Tmax_h)?Tmax_h.toFixed(3):'—'}</td></tr>
+    </table>`;
+  document.getElementById('results-kin').innerHTML = out;
+
+  // Plot absorption vs time (simple linear model)
+  plotAbsorptionGraph(J, Tlag_h, Tmax_h, dose);
+  document.getElementById('printBtnKin').style.display='inline-block';
+  document.getElementById('pdfBtnKin').style.display='inline-block';
+}
+
+function clearKinetics(){
+  ['logpKin','mwKin','doseKin','thicknessKin'].forEach(id=>document.getElementById(id).value = '');
+  document.getElementById('doseKin').value = '1'; document.getElementById('thicknessKin').value='20';
+  document.getElementById('results-kin').innerHTML = '<em class="muted">Results will appear here (Tlag, Kp, flux, T50, Tmax)...</em>';
+  if(window.absChart){ window.absChart.destroy(); window.absChart = null; }
+  document.getElementById('printBtnKin').style.display='none';
+  document.getElementById('pdfBtnKin').style.display='none';
+}
+
+/* ---------- Plotting: Absorption vs Time (cumulative absorbed mg/cm2) ---------- */
+function plotAbsorptionGraph(J, Tlag_h, Tmax_h, Dose){
+  const ctx = document.getElementById('absGraph').getContext('2d');
+  // time array: auto-scale maxTime: either 24h or 3*(Tmax) if Tmax small
+  let maxTime = 24;
+  if(isFinite(Tmax_h) && Tmax_h>0 && Tmax_h < 8) maxTime = Math.min(24, Math.max(1, Tmax_h*6)); // zoom if Tmax small
+  const step = Math.max(0.01, maxTime/240); // keep smooth
+  const times = [], values = [];
+  for(let t=0; t<=maxTime+1e-9; t+=step){
+    times.push(parseFloat(t.toFixed(4)));
+    if(!isFinite(Tlag_h) || t < Tlag_h) values.push(0);
+    else {
+      let absorbed = J * 3600 * (t - Tlag_h); // J mg/cm2/s * seconds
+      if(absorbed > Dose) absorbed = Dose;
+      values.push(absorbed);
+    }
+  }
+
+  if(window.absChart) { window.absChart.destroy(); window.absChart = null; }
+
+  // create chart with annotation lines
+  window.absChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: times,
+      datasets: [{
+        label: 'Cumulative absorbed dose (mg/cm²)',
+        data: values,
+        borderColor: '#0b63ff',
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false,
+        tension: 0.0
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: {mode:'index', intersect:false},
+      scales: {
+        x: { title: { display:true, text:'Time (hours)' } },
+        y: { title: { display:true, text:'Absorbed dose (mg/cm²)' }, beginAtZero:true }
+      },
+      plugins: {
+        legend:{display:false},
+        annotation: {
+          annotations: {
+            TlagLine: (isFinite(Tlag_h) ? {
+              type:'line',
+              xMin:Tlag_h, xMax:Tlag_h,
+              borderColor:'red', borderWidth:2, borderDash:[6,6],
+              label:{content:['Tlag','('+Tlag_h.toFixed(3)+' h)'],enabled:true,position:'start',backgroundColor:'rgba(255,255,255,0.8)'}
+            } : null),
+            TmaxLine: (isFinite(Tmax_h) ? {
+              type:'line',
+              xMin:Tmax_h, xMax:Tmax_h,
+              borderColor:'green', borderWidth:2, borderDash:[6,6],
+              label:{content:['Tmax','('+Tmax_h.toFixed(3)+' h)'],enabled:true,position:'start',backgroundColor:'rgba(255,255,255,0.8)'}
+            } : null)
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `Absorbed: ${ctx.parsed.y.toFixed(4)} mg/cm²`
+          }
+        }
+      }
+    },
+    plugins: [Chart.registry.getPlugin('annotation')]
+  });
+}
+
+/* ---------- init ---------- */
+window.onload = function(){
+  generateHeader();
+  // hide print/pdf initially
+  ['Tox','Abs','Kin'].forEach(s=>{
+    document.getElementById('printBtn'+s) && (document.getElementById('printBtn'+s).style.display='none');
+    document.getElementById('pdfBtn'+s) && (document.getElementById('pdfBtn'+s).style.display='none');
+  });
+};
+
+</script>
+</body>
+</html>
